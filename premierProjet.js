@@ -48,12 +48,41 @@
     function addPoint(x, y) {
       pts.push(new THREE.Vector2(x, y));
       pointsGroup.add(makeRedDot(x, y));
-      updateCurve();
+      updateCurve(0);
     }
 
     // Courbe de Béizers
-    function updateCurve() {
+    function updateCurve(option) {
       clearCurve();
+      switch(option) {
+        default:
+          allLine();
+          break;
+        case 1:
+          bezier();
+          break;
+      }
+    }
+
+    function allLine(){
+      if (pts.length < 2) return;
+
+      const positions = [];
+
+      for (let i = 0; i < pts.length - 1; i++) {
+        const x = pts[i].x;
+        const y = pts[i].y;
+        positions.push(x, y, 0);
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      const mat = new THREE.LineBasicMaterial({ color: 0xffffff });
+      curveLine = new THREE.Line(geo, mat);
+      scene.add(curveLine);
+    }
+
+    function bezier(){
       if (pts.length < 2) return;
 
       const positions = [];
