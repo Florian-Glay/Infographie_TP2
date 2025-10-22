@@ -14,6 +14,7 @@
     const pointsGroup = new THREE.Group();  // groupe de points rouges
     scene.add(pointsGroup);
     let curveLine = null;
+    let lines = null;
     let pts = [];
 
     function makeRedDot(x, y) { 
@@ -31,6 +32,12 @@
         curveLine.geometry.dispose();
         curveLine.material.dispose();
         curveLine = null;
+      }
+      if (lines) {
+        scene.remove(lines);
+        lines.geometry.dispose();
+        lines.material.dispose();
+        lines = null;
       }
     }
 
@@ -61,27 +68,26 @@
           break;
         case 1:
           bezier();
-          //allLine();
+          allLine();
           break;
       }
     }
 
+
+
     function allLine(){
       if (pts.length < 2) return;
-
       const positions = [];
-
       for (let i = 0; i < pts.length; i++) {
         const x = pts[i].x;
         const y = pts[i].y;
         positions.push(x, y, 0);
       }
-
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
       const mat = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-      curveLine = new THREE.Line(geo, mat);
-      //scene.add(curveLine);
+      lines = new THREE.Line(geo, mat);
+      scene.add(lines);
     }
 
     function binom(n,k){
@@ -94,6 +100,8 @@
       }
       return res;
     }
+
+    
 
     function bernstein(points, t){
       const n = points.length - 1;
