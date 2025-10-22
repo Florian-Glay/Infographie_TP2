@@ -48,7 +48,8 @@
     function addPoint(x, y) {
       pts.push(new THREE.Vector2(x, y));
       pointsGroup.add(makeRedDot(x, y));
-      updateCurve(0);
+      updateCurve(1);
+      //clearAll();
     }
 
     // Courbe de Béizers
@@ -60,6 +61,7 @@
           break;
         case 1:
           bezier();
+          //allLine();
           break;
       }
     }
@@ -69,7 +71,7 @@
 
       const positions = [];
 
-      for (let i = 0; i < pts.length - 1; i++) {
+      for (let i = 0; i < pts.length; i++) {
         const x = pts[i].x;
         const y = pts[i].y;
         positions.push(x, y, 0);
@@ -77,47 +79,56 @@
 
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      const mat = new THREE.LineBasicMaterial({ color: 0xffffff });
+      const mat = new THREE.LineBasicMaterial({ color: 0x00ff00 });
       curveLine = new THREE.Line(geo, mat);
-      scene.add(curveLine);
+      //scene.add(curveLine);
+    }
+
+    function binom(n,k){
+      if(k<0 || k>n) return 0;
+      if(k===0 || k===n) return 1;
+      if(k>n-k) k = n-k;
+      let res = 1;
+      for(let j=1; j<=k; j++){
+        res = (res*(n - (k - j))) / j;
+      }
+      return res;
+    }
+
+    function bernstein(points, t){
+      const n = points.length - 1;
+      if (n < 1) return new THREE.Vector2();
+      if (t<=0) return points[0].clone();
+      if (t>=1) return points[n].clone();
+
+      let x = 0, y = 0;
+      const umt = 1 - t;
+      // on peut calculer directement C(n,i) t^i (1-t)^(n-i)
+      for(let i=0; i<=n; i++){
+        const w = binom(n, i) * Math.pow(t, i) * Math.pow(umt, n - i);
+        x += points[i].x * w;
+        y += points[i].y * w;
+      }
+      return new THREE.Vector2(x, y);
     }
 
     function bezier(){
       if (pts.length < 2) return;
 
+      const steps = 200; // lissage
       const positions = [];
-
-      for (let i = 0; i < pts.length - 1; i++) {
-        const p0 = (i > 0) ? pts[i-1] : pts[i];
-        const p1 = pts[i];
-        const p2 = pts[i+1];
-        const p3 = (i + 2 < pts.length) ? pts[i+2] : pts[i+1];
-
-        const b0 = p1.clone();
-        const b1 = p1.clone().add( p2.clone().sub(p0).multiplyScalar(1/6) );
-        const b2 = p2.clone().sub( p3.clone().sub(p1).multiplyScalar(1/6) );
-        const b3 = p2.clone();
-
-        // échantillonnage de la courbe cubique de Bézier; n=3
-        const steps = 24; // lissage
-        for (let j = 0; j <= steps; j++) {
-          const t = j / steps; // Var de temps
-          const umt = 1 - t; // un moins t
-          const umt2 = umt * umt; // un moins t au carré
-          const t2 = t * t; // t carré
-          const x = umt2*umt * b0.x + 3*umt2*t * b1.x + 3*umt*t2 * b2.x + t2*t * b3.x;
-          const y = umt2*umt * b0.y + 3*umt2*t * b1.y + 3*umt*t2 * b2.y + t2*t * b3.y;
-          positions.push(x, y, 0);
-        }
+      for(let j=0; j<=steps; j++){
+        const t = j/steps;
+        const p = bernstein(pts, t);
+        positions.push(p.x, p.y, 0);
       }
-
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      const mat = new THREE.LineBasicMaterial({ color: 0xffffff });
+      const mat = new THREE.LineBasicMaterial({ color:0xffffff });
       curveLine = new THREE.Line(geo, mat);
       scene.add(curveLine);
     }
-
+    
     // Placer un point
     renderer.domElement.addEventListener('pointerdown', (e) => {
       const rect = renderer.domElement.getBoundingClientRect();
