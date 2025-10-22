@@ -1,0 +1,11 @@
+{
+  "name": "infographie_tp2",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "http-server . -p 5173 -c-1 -o /index.html"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

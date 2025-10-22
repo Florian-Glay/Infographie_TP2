@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>TP Infographie — Courbes & Points</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Styles de la sidebar -->
+  <link rel="stylesheet" href="./sidebar.css" />
+</head>
+<body>
+  <!-- ====== Sidebar UI (indépendante du JS de base) ====== -->
+  <aside id="sidebar" class="sidebar">
+    <header class="sb-header">
+      <span>Outils</span>
+      <button id="toggle" class="btn">⟨</button>
+    </header>
+
+    <div class="sb-content">
+      <section>
+        <label class="sb-label">Courbe active</label>
+        <div class="btn-group">
+          <button class="btn-tab active" id="curve1" data-curve="0">Courbe 1</button>
+          <button class="btn-tab" id="curve2" data-curve="1">Courbe 2</button>
+          <button class="btn-tab" id="curve3" data-curve="2">Courbe 3</button>
+        </div>
+      </section>
+
+      <section>
+        <label class="sb-label">Mode</label>
+        <div class="row">
+          <select id="mode" class="input">
+            <option value="place">Placer (clic)</option>
+            <option value="move">Déplacer (drag)</option>
+          </select>
+          <button id="clearActive" class="btn">Effacer la courbe active</button>
+        </div>
+      </section>
+
+      <section>
+        <label class="sb-label">Ajouter par coordonnées</label>
+        <div class="grid2">
+          <input id="xInput" class="input" type="number" step="1" placeholder="X" />
+          <input id="yInput" class="input" type="number" step="1" placeholder="Y" />
+        </div>
+        <div class="row">
+          <button id="addXY" class="btn">Ajouter le point</button>
+        </div>
+        <p class="muted">R pour tout effacer (toutes les courbes).</p>
+      </section>
+
+      <p id="status" class="muted">Prêt.</p>
+    </div>
+  </aside>
+
+  <button id="reopen" class="reopen">☰ Outils</button>
+
+  <!-- ====== three.js + TON JS DE BASE (inchangés) ====== -->
+  <script src="./Three/three.js"></script>
+  <script src="./premierProjet.js"></script>
+
+  <!-- ====== Extension Sidebar (utilise les globals de ton JS de base) ====== -->
+  <script src="./sidebar.js"></script>
+</body>
+</html>
