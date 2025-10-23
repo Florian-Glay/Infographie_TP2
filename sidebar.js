@@ -3,6 +3,7 @@ const $ = (id) => document.getElementById(id);
 const sidebar = $("sidebar"), toggleBtn = $("toggle"), reopenBtn = $("reopen");
 const modeSel = $("mode"), statusEl = $("status");
 const tabBtns = [$("curve1"), $("curve2"), $("curve3")];
+const tabPredef = [$("predef1"), $("predef2"), $("predef3")];
 const xInput = $("xInput"), yInput = $("yInput"), addXYBtn = $("addXY");
 const clearActiveBtn = $("clearActive");
 function setStatus(t){ statusEl.textContent = t; }
@@ -146,6 +147,31 @@ function setActiveCurve(idx){
     updateCurve();
 }
 
+function setNewCurve(idx){
+  clearActive();
+  let P0, P1, P2, P3;
+  let factor = 200;
+  switch(idx){
+    case 0:
+      P0 = [0, 0]; P1 = [0, 1]; P2 = [1, 1]; P3 = [1, 0];
+      break;
+    case 1 :
+      P0 = [0, 0]; P1 = [1, 0]; P2 = [0, 1]; P3 = [1, 1];
+      break;
+    case 2 :
+      P0 = [0, 0]; P1 = [1, 1]; P2 = [0, 1]; P3 = [1, 0];
+      break;
+    default:
+      P0 = [0, 0]; P1 = [0, 1]; P2 = [1, 1]; P3 = [1, 0];
+      break;
+  }
+  addPointToActive(P0[0] * factor, P0[1] * factor);
+  addPointToActive(P1[0] * factor, P1[1] * factor);
+  addPointToActive(P2[0] * factor, P2[1] * factor);
+  addPointToActive(P3[0] * factor, P3[1] * factor);
+  updateCurve();
+}
+
 // UI: Sidebar
 toggleBtn.addEventListener("click", () => {
   sidebar.classList.toggle("collapsed");
@@ -167,6 +193,8 @@ addXYBtn.addEventListener("click", () => {
   }
 });
 clearActiveBtn.addEventListener("click", clearActive);
+
+tabPredef.forEach(btn => btn.addEventListener("click", () => setNewCurve(Number(btn.dataset.curve))));
 
 //Mode déplacer (drag)
 const raycaster = new THREE.Raycaster();
