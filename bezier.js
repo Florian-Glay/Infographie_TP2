@@ -11,7 +11,7 @@ camera.position.set(0, 0, 1);
 camera.lookAt(0, 0, 0);
 
 // Plan invisible pour le Raycaster (z=0)
-const planGeometry = new THREE.PlaneGeometry(1000, 1000);
+const planGeometry = new THREE.PlaneGeometry(2000, 2000);
 const planMaterial = new THREE.MeshBasicMaterial({ visible: false });
 const plan = new THREE.Mesh(planGeometry, planMaterial);
 scene.add(plan);
