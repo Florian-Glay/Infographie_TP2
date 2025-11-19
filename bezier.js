@@ -231,6 +231,10 @@ function setupBezierSection() {
         refreshControlList(); // INDICATEUR DE PTS
     }
 
+    // ==============================================================================================================
+    // SOURIS
+    // ==============================================================================================================
+
     // Obtenir le point dans le plan à partir de la souris
     function getWorldPointFromEvent(event) {
         const rect = canvas.getBoundingClientRect(); // Taille du canvas
@@ -263,63 +267,72 @@ function setupBezierSection() {
     let pointerId = null; // ID du pointeur en cours de drag
 
     // Placer un point ou commencer un drag
-    canvas.addEventListener('pointerdown', (event) => { 
-        const worldPoint = getWorldPointFromEvent(event);
-        if (!worldPoint) return;
-        const idx = findPointIndex(worldPoint);
-        if (idx !== -1) {
+    canvas.addEventListener('pointerdown', (event) => {  // souris pressée
+        const worldPoint = getWorldPointFromEvent(event); // trouver le point d'intersection
+        if (!worldPoint) return; // Si pas de point, on fait rien
+        const idx = findPointIndex(worldPoint); // On trouve son index afin de déplacer le bon point
+        if (idx !== -1) { // Si on a trouvé un point proche, on commence le drag
             state.dragIndex = idx;
             pointerId = event.pointerId;
-            canvas.setPointerCapture(pointerId);
+            canvas.setPointerCapture(pointerId); // Capturer le pointeur pour suivre en dehors du canvas
         }
         else {
-            state.controlPoints.push(worldPoint);
-            updateAll();
+            state.controlPoints.push(worldPoint); // Nouveau point ajouté car on a pas trouvéde point le plus proche
+            updateAll(); // Update complet
         }
     });
 
+    // Déplacer le point en drag
     canvas.addEventListener('pointermove', (event) => {
-        if (state.dragIndex === -1) return;
-        const worldPoint = getWorldPointFromEvent(event);
-        if (!worldPoint) return;
-        state.controlPoints[state.dragIndex].copy(worldPoint);
-        updateAll();
+        if (state.dragIndex === -1) return; // Si c'est un nouveau point et pas un drag, on fait rien
+        const worldPoint = getWorldPointFromEvent(event); // Trouver le point dans le plan 
+        if (!worldPoint) return; // Si pas dans le plan
+        state.controlPoints[state.dragIndex].copy(worldPoint); // On déplace le point en cours de drag
+        updateAll(); // Update
     });
 
-    function releaseDrag() {
-        if (pointerId !== null) {
-        try { canvas.releasePointerCapture(pointerId); } catch (e) { /* ignore */ }
-        pointerId = null;
+    function releaseDrag() { // Relâcher le drag
+        if (pointerId !== null) { // Si on était en drag
+          try { canvas.releasePointerCapture(pointerId); } catch (e) { /* ignore */ } // Enlever la capture
+          pointerId = null; // init du pointeur
         }
-        state.dragIndex = -1;
+        state.dragIndex = -1; // Plus de drag
     }
 
-    canvas.addEventListener('pointerup', releaseDrag);
-    canvas.addEventListener('pointerleave', releaseDrag);
+    canvas.addEventListener('pointerup', releaseDrag); // Relâcher le drag
+    canvas.addEventListener('pointerleave', releaseDrag); // Relâcher le drag si on sort du canvas
 
-    slider.addEventListener('input', () => {
-        state.tValue = slider.value / 100;
-        sliderValue.textContent = state.tValue.toFixed(2);
+    // ==============================================================================================================
+    // INTERFACE HTML
+    // ==============================================================================================================
+
+    // Slider pour t de De Casteljau
+    slider.addEventListener('input', () => { 
+        state.tValue = slider.value / 100; // Valeur entre 0 et 1
+        sliderValue.textContent = state.tValue.toFixed(2); // Affichage de la valeur
+        // Update des étapes
         updateCurve();
         updateStepsVisualization();
     });
 
+    // Formulaire d'ajout manuel de point
     bezierElements.manualForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        const x = parseFloat(bezierElements.coordX.value);
-        const y = parseFloat(bezierElements.coordY.value);
-        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-        state.controlPoints.push(new THREE.Vector3(x, y, 0));
-        updateAll();
+        const x = parseFloat(bezierElements.coordX.value); // X
+        const y = parseFloat(bezierElements.coordY.value); // Y
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return; // Si erreur
+        state.controlPoints.push(new THREE.Vector3(x, y, 0)); // Nouveau point
+        updateAll(); // Update
         event.target.reset();
     });
 
+    // Bouton de nettoyage
     bezierElements.clearBtn.addEventListener('click', () => {
-        state.controlPoints = [];
-        updateAll();
+        state.controlPoints = []; // On vide les points
+        updateAll(); // Update
     });
 
-    const presets = {
+    const presets = { // Les presets de courbes
         courbe1: [
         [0, 0],
         [0, 1],
@@ -339,58 +352,72 @@ function setupBezierSection() {
         [1, 0]
         ]
     };
-
+    
+    // Boutons de presets
     document.querySelectorAll('[data-preset]').forEach((button) => {
-        button.addEventListener('click', () => {
-        const key = button.getAttribute('data-preset');
-        const preset = presets[key];
-        if (!preset) return;
-        state.controlPoints = preset.map(([x, y]) => new THREE.Vector3(x, y, 0));
-        updateAll();
+        button.addEventListener('click', () => { // Au clic
+          const key = button.getAttribute('data-preset'); // On récupère la clé
+          const preset = presets[key]; // On récupère le preset
+          if (!preset) return; // Si il existe pas, bah dommage
+          state.controlPoints = preset.map(([x, y]) => new THREE.Vector3(x, y, 0)); // On crée les points et écrase les anciens
+          updateAll(); // Update
         });
     });
 
+    // Bouton de transformation
     bezierElements.transformBtn.addEventListener('click', () => {
-        if (!state.controlPoints.length) return;
-        const dx = parseFloat(bezierElements.translateX.value) || 0;
-        const dy = parseFloat(bezierElements.translateY.value) || 0;
-        const scale = parseFloat(bezierElements.scale.value) || 1;
-        const angleDeg = parseFloat(bezierElements.rotation.value) || 0;
-        const angle = THREE.MathUtils.degToRad(angleDeg);
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
+        if (!state.controlPoints.length) return; // Si pas de pts on fait rien
+        // Recuperation des valeurs
+        const dx = parseFloat(bezierElements.translateX.value) || 0; // Translation X
+        const dy = parseFloat(bezierElements.translateY.value) || 0; // Translation Y
+        const scale = parseFloat(bezierElements.scale.value) || 1; // Échelle
+        const angleDeg = parseFloat(bezierElements.rotation.value) || 0; // Rotation en degrés
+
+        // Transformation
+        const angle = THREE.MathUtils.degToRad(angleDeg); // En radians
+        const cos = Math.cos(angle); // Cosinus
+        const sin = Math.sin(angle); // Sinus
+        // On applique la transformation à chaque point
         state.controlPoints.forEach((p) => {
-        const scaledX = p.x * scale;
-        const scaledY = p.y * scale;
-        const rotatedX = scaledX * cos - scaledY * sin;
-        const rotatedY = scaledX * sin + scaledY * cos;
-        p.x = rotatedX + dx;
-        p.y = rotatedY + dy;
+          // Mise à l'échelle
+          const scaledX = p.x * scale;
+          const scaledY = p.y * scale;
+          // Rotation avec la formule 2D
+          const rotatedX = scaledX * cos - scaledY * sin;
+          const rotatedY = scaledX * sin + scaledY * cos;
+          // Translation
+          p.x = rotatedX + dx;
+          p.y = rotatedY + dy;
         });
-        updateAll();
+        updateAll(); // Update
     });
 
-    function resizeRenderer() {
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-        if (canvas.width !== width || canvas.height !== height) {
-        renderer.setSize(width, height, false);
-        const viewSize = 4;
-        const aspect = width / height;
-        camera.left = (-viewSize * aspect) / 2;
-        camera.right = (viewSize * aspect) / 2;
-        camera.top = viewSize / 2;
-        camera.bottom = -viewSize / 2;
-        camera.updateProjectionMatrix();
+    // ==============================================================================================================
+    // RENDERING
+    // ==============================================================================================================
+    function resizeRenderer() { // Resize du renderer et de la caméra
+        const width = canvas.clientWidth; // new width
+        const height = canvas.clientHeight; // new height
+        if (canvas.width !== width || canvas.height !== height) { // comparer old et new
+          renderer.setSize(width, height, false); // resize
+          const viewSize = 4;
+          const aspect = width / height; // Aspect ratio
+          // Camera
+          camera.left = (-viewSize * aspect) / 2;
+          camera.right = (viewSize * aspect) / 2;
+          camera.top = viewSize / 2;
+          camera.bottom = -viewSize / 2;
+          camera.updateProjectionMatrix();
         }
     }
 
-    updateAll();
-    slider.dispatchEvent(new Event('input'));
-    state.controlPoints = presets.courbe1.map(([x, y]) => new THREE.Vector3(x, y, 0));
-    updateAll();
+    // Initial update
+    updateAll(); // 1er update
+    slider.dispatchEvent(new Event('input')); // Pour initialiser t
+    state.controlPoints = presets.courbe1.map(([x, y]) => new THREE.Vector3(x, y, 0));  // Preset initial
+    updateAll();  // Update final après preset
 
-    return {
+    return {// On renvoie la fonction de rendu
         render() {
         resizeRenderer();
         renderer.render(scene, camera);
@@ -398,11 +425,12 @@ function setupBezierSection() {
     };
 }
 
-const bezierApp = setupBezierSection();
+const bezierApp = setupBezierSection(); // Initialisation de la section Bézier
 
+// Boucle de rendu
 function renderLoop() {
     requestAnimationFrame(renderLoop);
     bezierApp.render();
 }
 
-renderLoop();
+renderLoop(); // Démarrage de la boucle
