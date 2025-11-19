@@ -1,68 +1,92 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <title>TP Infographie - Courbes & Points</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="./sidebar.css" />
-</head>
-<body>
-    <aside id="sidebar" class="sidebar">
-        <header class="sb-header">
-            <span>Outils</span>
-            <button id="toggle" class="btn">⟨</button>
-        </header>
-
-        <div class="sb-content">
-            <section>
-                <label class="sb-label">Courbe active</label>
-                <div class="btn-group">
-                <button class="btn-tab active" id="curve1" data-curve="0">Courbe 1</button>
-                <button class="btn-tab" id="curve2" data-curve="1">Courbe 2</button>
-                <button class="btn-tab" id="curve3" data-curve="2">Courbe 3</button>
-                </div>
-            </section>
-
-            <section>
-                <label class="sb-label">Mode</label>
-                <div class="row">
-                <select id="mode" class="input">
-                    <option value="place">Placer (clic)</option>
-                    <option value="move">Déplacer (drag)</option>
-                </select>
-                <button id="clearActive" class="btn">Effacer la courbe active</button>
-                </div>
-            </section>
-
-            <section>
-                <div class="row">
-                    <label class="sb-label">Ajouter par coordonnées</label>
-                    <div class="grid2">
-                        <input id="xInput" class="input" type="number" step="1" placeholder="X" />
-                        <input id="yInput" class="input" type="number" step="1" placeholder="Y" />
-                    </div>
-                    <button id="addXY" class="btn">Ajouter le point</button>
-                </div>
-                <p class="muted">R pour tout effacer (toutes les courbes).</p>
-            </section>
-
-            <section>
-                <label class="sb-label">Courbe Pré-définis</label>
-                <div class="btn-group">
-                    <button class="btn-tab" id="predef1" data-curve="0">Courbe 1</button>
-                    <button class="btn-tab" id="predef2" data-curve="1">Courbe 2</button>
-                    <button class="btn-tab" id="predef3" data-curve="2">Courbe 3</button>
-                </div>
-            </section>
-
-            <p id="status" class="muted">Prêt.</p>
-        </div>
-    </aside>
-
-  <button id="reopen" class="reopen">☰ Outils</button>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP 2 WebGL : Courbes de Bézier interactives</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="./Three/three.js"></script>
-  <script src="./bezier.js"></script>
-  <script src="./sidebar.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <main class="">
+    <section id="bezier" class="space-y-8">
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,200px)_minmax(0,200px)_1fr]">
+        <div class="space-y-6">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-lg">Insertion des points de contrôle</h3>
+              <button id="clearBezier" class="text-xs uppercase tracking-wide text-slate-400 hover:text-slate-200">Tout effacer</button>
+            </div>
+            <form id="manualPointForm" class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <label class="text-sm text-slate-400">x
+                  <input id="coordX" type="number" step="0.01" value="0" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none" required>
+                </label>
+                <label class="text-sm text-slate-400">y
+                  <input id="coordY" type="number" step="0.01" value="0" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none" required>
+                </label>
+              </div>
+              <button type="submit" class="w-full rounded-xl bg-sky-500/90 px-3 py-2 font-semibold text-slate-900 hover:bg-sky-400 transition">Ajouter un point</button>
+            </form>
+            <p class="text-xs text-slate-500">Cliquez sur le canevas pour ajouter un point. Cliquez-glissez un point existant pour le déplacer.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3">
+            <p class="text-sm font-semibold text-slate-200">Applications demandées (degré 3)</p>
+            <div class="grid gap-2 text-sm">
+              <button data-preset="courbe1" class="rounded-lg border border-slate-800 px-3 py-2 text-left hover:border-sky-500">P0(0,0) → P3(1,0)</button>
+              <button data-preset="courbe2" class="rounded-lg border border-slate-800 px-3 py-2 text-left hover:border-sky-500">P0(0,0) → P3(1,1)</button>
+              <button data-preset="courbe3" class="rounded-lg border border-slate-800 px-3 py-2 text-left hover:border-sky-500">P0(0,0) → P3(1,0) (diag)</button>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-3 text-sm">
+            <div class="flex items-center justify-between text-slate-300">
+              <span>Paramètre t (De Casteljau)</span>
+              <span id="stepValue" class="text-sky-300 font-semibold">0.50</span>
+            </div>
+            <input id="stepSlider" type="range" min="0" max="100" value="50" class="w-full">
+            <p class="text-xs text-slate-500">Les polylignes colorées visualisent les pas intermédiaires de l’algorithme.</p>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 space-y-4">
+            <h4 class="font-semibold text-slate-200">Transformations géométriques</h4>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <label class="text-slate-400">Translation dx
+                <input id="translateX" type="number" step="0.1" value="0" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100">
+              </label>
+              <label class="text-slate-400">Translation dy
+                <input id="translateY" type="number" step="0.1" value="0" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100">
+              </label>
+              <label class="text-slate-400">Homothétie (facteur)
+                <input id="scale" type="number" step="0.1" value="1" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100">
+              </label>
+              <label class="text-slate-400">Rotation (°)
+                <input id="rotation" type="number" step="5" value="0" class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100">
+              </label>
+            </div>
+            <button id="applyTransform" class="w-full rounded-xl bg-amber-400/90 px-3 py-2 font-semibold text-slate-900 hover:bg-amber-300 transition">Appliquer / combiner</button>
+            <p class="text-xs text-slate-500">Les transformations s’appliquent autour de l’origine (0,0). Enchaînez-les pour composer vos propres effets.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+            <h4 class="font-semibold text-slate-100">Points de contrôle</h4>
+            <p id="bezierStatus" class="text-xs text-slate-500">0 point — ajoutez-en via le formulaire ou un clic.</p>
+            <ul id="controlPointsList" class="mt-3 max-h-48 overflow-auto space-y-1 text-sm"></ul>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <canvas id="bezierCanvas" class="w-full h-full rounded-2xl border border-slate-800 bg-slate-950"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="main.js"></script>
 </body>
 </html>
